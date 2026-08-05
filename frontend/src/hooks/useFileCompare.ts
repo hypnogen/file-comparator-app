@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CompareResponse, DifferenceItem } from '../types/diff';
+import type { CompareResponse, DifferenceItem } from '../types/diff';
 
 export const useFileCompare = () => {
   const [file1, setFile1] = useState<File | null>(null);

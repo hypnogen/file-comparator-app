@@ -1,122 +1,107 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { DropZone } from './components/DropZone';
+import { DiffViewer } from './components/DiffViewer';
+import { useFileCompare } from './hooks/useFileCompare';
+import { RefreshCw } from 'lucide-react';
+import './index.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export function App() {
+  // Подключаем наш хук с реальной логикой
+  const {
+    file1,
+    file2,
+    setFile1,
+    setFile2,
+    differences,
+    isLoading,
+    error,
+    compare,
+    reset,
+  } = useFileCompare();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    compare();
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+    <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-5xl mx-auto space-y-8">
+        
+        {/* Заголовок */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Сравнение файлов
+          </h1>
+          <p className="mt-2 text-slate-600">
+            Загрузите два текстовых документа (.txt, .docx и др.), чтобы увидеть разницу
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        {/* Форма */}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DropZone
+                label="Первый файл (Оригинал)"
+                selectedFile={file1}
+                onFileSelect={setFile1}
+              />
+              <DropZone
+                label="Второй файл (Измененный)"
+                selectedFile={file2}
+                onFileSelect={setFile2}
+              />
+            </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+            <div className="flex gap-4">
+              <button 
+                type="submit"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                disabled={!file1 || !file2 || isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={20} />
+                    Сравниваем...
+                  </>
+                ) : (
+                  'Сравнить файлы'
+                )}
+              </button>
+
+              {(file1 || file2 || differences) && (
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors cursor-pointer"
+                >
+                  Сбросить
+                </button>
+              )}
+            </div>
+          </form>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Вывод ошибок */}
+        {error && (
+          <div className="bg-red-50 text-red-800 p-4 rounded-xl border border-red-200 text-center font-medium">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Результаты сравнения */}
+        {differences && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-slate-800 px-1">
+              Результаты сравнения
+            </h2>
+            <DiffViewer differences={differences} />
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
