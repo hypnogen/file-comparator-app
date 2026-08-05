@@ -1,11 +1,10 @@
 import { DropZone } from './components/DropZone';
 import { DiffViewer } from './components/DiffViewer';
+import { ThemeToggle } from './components/ThemeToggle';
 import { useFileCompare } from './hooks/useFileCompare';
 import { RefreshCw } from 'lucide-react';
-import './index.css';
 
 export function App() {
-  // Подключаем наш хук с реальной логикой
   const {
     file1,
     file2,
@@ -24,21 +23,24 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
       <div className="max-w-5xl mx-auto space-y-8">
         
-        {/* Заголовок */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Сравнение файлов
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Загрузите два текстовых документа (.txt, .docx и др.), чтобы увидеть разницу
-          </p>
+        {/* Шапка с кнопкой темы */}
+        <div className="flex justify-between items-start">
+          <div className="text-left">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Сравнение файлов
+            </h1>
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
+              Загрузите два текстовых документа (.txt, .docx и др.), чтобы увидеть разницу
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* Форма */}
-        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+        <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DropZone
@@ -73,7 +75,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={reset}
-                  className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors cursor-pointer"
                 >
                   Сбросить
                 </button>
@@ -84,7 +86,7 @@ export function App() {
 
         {/* Вывод ошибок */}
         {error && (
-          <div className="bg-red-50 text-red-800 p-4 rounded-xl border border-red-200 text-center font-medium">
+          <div className="bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 p-4 rounded-xl border border-red-200 dark:border-red-800 text-center font-medium">
             ⚠️ {error}
           </div>
         )}
@@ -92,7 +94,7 @@ export function App() {
         {/* Результаты сравнения */}
         {differences && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-800 px-1">
+            <h2 className="text-xl font-semibold px-1">
               Результаты сравнения
             </h2>
             <DiffViewer differences={differences} />
