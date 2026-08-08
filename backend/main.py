@@ -1,11 +1,26 @@
 import os
+import io
 import difflib
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from docx import Document
-import io
 
 app = FastAPI()
+
+# 1. Настройка CORS для работы с Vite/React
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 ALLOWED_EXTENSIONS = {
     '.txt', '.docx', '.md', '.markdown',
@@ -16,7 +31,7 @@ ALLOWED_EXTENSIONS = {
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 def validate_file(file: UploadFile):
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(file.filename or "")[1].lower()
     
     if ext not in ALLOWED_EXTENSIONS:
         raise ValueError(f"Формат файла '{file.filename}' не поддерживается.")
@@ -29,13 +44,20 @@ def validate_file(file: UploadFile):
         raise ValueError(f"Файл '{file.filename}' слишком большой. Максимальный размер: 10 МБ")
 
 def read_file_content(file: UploadFile) -> str:
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(file.filename or "")[1].lower()
     content_bytes = file.file.read()
 
+    # Безопасное чтение .docx
     if ext == '.docx':
-        doc = Document(io.BytesIO(content_bytes))
-        return '\n'.join([p.text for p in doc.paragraphs])
+        try:
+            doc = Document(io.BytesIO(content_bytes))
+            return '\n'.join([p.text for p in doc.paragraphs])
+        except Exception:
+            raise ValueError(
+                f"Не удалось прочитать документ '{file.filename}'. Возможно, файл поврежден или зашифрован."
+            )
 
+    # Чтение обычных текстовых файлов
     encodings = ['utf-8-sig', 'utf-8', 'cp1251', 'latin-1']
     for enc in encodings:
         try:
@@ -43,7 +65,7 @@ def read_file_content(file: UploadFile) -> str:
         except UnicodeDecodeError:
             continue
 
-    raise ValueError(f"Не удалось прочитать кодировку файла '{file.filename}'")
+    raise ValueError(f"Не удалось определить кодировку файла '{file.filename}'")
 
 @app.post("/api/compare")
 async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(...)):
@@ -61,6 +83,12 @@ async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(
         differences = []
         line_num = 1
 
+        stats = {
+            "additions": 0,
+            "deletions": 0,
+            "modifications": 0
+        }
+
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == 'equal':
                 for l1, l2 in zip(lines1[i1:i2], lines2[j1:j2]):
@@ -71,21 +99,45 @@ async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(
                         "type": "Unchanged"
                     })
                     line_num += 1
+
             elif tag == 'replace':
-                # Замена блока строк
                 len1 = i2 - i1
                 len2 = j2 - j1
-                max_len = max(len1, len2)
-                for k in range(max_len):
-                    val1 = lines1[i1 + k] if k < len1 else None
-                    val2 = lines2[j1 + k] if k < len2 else None
+                common_len = min(len1, len2)
+
+                # Замененные (измененные) строки
+                for k in range(common_len):
                     differences.append({
                         "line_number": line_num,
-                        "file1": val1,
-                        "file2": val2,
+                        "file1": lines1[i1 + k],
+                        "file2": lines2[j1 + k],
                         "type": "Modified"
                     })
                     line_num += 1
+                    stats["modifications"] += 1
+
+                # Оставшиеся удаленные строки (если файл 1 длиннее)
+                for k in range(common_len, len1):
+                    differences.append({
+                        "line_number": line_num,
+                        "file1": lines1[i1 + k],
+                        "file2": None,
+                        "type": "Removed"
+                    })
+                    line_num += 1
+                    stats["deletions"] += 1
+
+                # Оставшиеся добавленные строки (если файл 2 длиннее)
+                for k in range(common_len, len2):
+                    differences.append({
+                        "line_number": line_num,
+                        "file1": None,
+                        "file2": lines2[j1 + k],
+                        "type": "Added"
+                    })
+                    line_num += 1
+                    stats["additions"] += 1
+
             elif tag == 'delete':
                 for l1 in lines1[i1:i2]:
                     differences.append({
@@ -95,6 +147,8 @@ async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(
                         "type": "Removed"
                     })
                     line_num += 1
+                    stats["deletions"] += 1
+
             elif tag == 'insert':
                 for l2 in lines2[j1:j2]:
                     differences.append({
@@ -104,9 +158,13 @@ async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(
                         "type": "Added"
                     })
                     line_num += 1
+                    stats["additions"] += 1
 
         return {
             "status": "success",
+            "file1_name": file1.filename,
+            "file2_name": file2.filename,
+            "stats": stats,
             "differences": differences
         }
 
@@ -115,8 +173,8 @@ async def compare_files(file1: UploadFile = File(...), file2: UploadFile = File(
             status_code=400,
             content={"status": "error", "message": str(err)}
         )
-    except Exception as err:
+    except Exception:
         return JSONResponse(
             status_code=500,
-            content={"status": "error", "message": "Произошла ошибка при обработке файлов"}
+            content={"status": "error", "message": "Произошла внутренняя ошибка сервера при сравнении файлов."}
         )

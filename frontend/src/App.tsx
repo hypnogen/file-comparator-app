@@ -18,13 +18,16 @@ export function App() {
     setFile1,
     setFile2,
     differences,
+    file1Name,
+    file2Name,
+    stats,
     isLoading,
     error,
     compare,
     reset,
   } = useFileCompare();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     compare();
   };
@@ -108,7 +111,13 @@ export function App() {
               <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
             </div>
 
-            <DiffViewer differences={differences} viewMode={viewMode} />
+            <DiffViewer 
+              differences={differences} 
+              file1Name={file1Name}
+              file2Name={file2Name}
+              stats={stats}
+              viewMode={viewMode} 
+            />
           </div>
         )}
 
