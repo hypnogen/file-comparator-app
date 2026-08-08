@@ -1,10 +1,17 @@
+import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { RefreshCw } from 'lucide-react';
+
 import { DropZone } from './components/DropZone';
 import { DiffViewer } from './components/DiffViewer';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ViewModeToggle } from './components/ViewModeToggle';
 import { useFileCompare } from './hooks/useFileCompare';
-import { RefreshCw } from 'lucide-react';
+import type { ViewMode } from './types/diff';
 
 export function App() {
+  const [viewMode, setViewMode] = useState<ViewMode>('split');
+
   const {
     file1,
     file2,
@@ -17,7 +24,7 @@ export function App() {
     reset,
   } = useFileCompare();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     compare();
   };
@@ -94,10 +101,14 @@ export function App() {
         {/* Результаты сравнения */}
         {differences && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold px-1">
-              Результаты сравнения
-            </h2>
-            <DiffViewer differences={differences} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
+              <h2 className="text-xl font-semibold">
+                Результаты сравнения
+              </h2>
+              <ViewModeToggle mode={viewMode} onModeChange={setViewMode} />
+            </div>
+
+            <DiffViewer differences={differences} viewMode={viewMode} />
           </div>
         )}
 

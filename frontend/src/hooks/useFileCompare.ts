@@ -26,7 +26,7 @@ export const useFileCompare = () => {
 
       const data: CompareResponse = await response.json();
 
-      if (data.status === 'success') {
+      if (response.ok && data.status === 'success') {
         setDifferences(data.differences);
       } else {
         setError(data.message || 'Произошла ошибка при обработке');
