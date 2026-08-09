@@ -5,6 +5,8 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from docx import Document
+from docx.text.paragraph import Paragraph
+from docx.table import Table
 
 app = FastAPI()
 
@@ -47,16 +49,34 @@ def read_file_content(file: UploadFile) -> str:
     ext = os.path.splitext(file.filename or "")[1].lower()
     content_bytes = file.file.read()
 
-    # Безопасное чтение .docx
+    # Безопасное чтение .docx с учетом таблиц и сохранения порядка
     if ext == '.docx':
         try:
             doc = Document(io.BytesIO(content_bytes))
-            return '\n'.join([p.text for p in doc.paragraphs])
+            lines = []
+
+            # Перебираем элементы документа в порядке их естественного следования
+            for child in doc.element.body:
+                if child.tag.endswith('p'):  # Обычный абзац (Paragraph)
+                    p = Paragraph(child, doc)
+                    if p.text:
+                        lines.append(p.text)
+                elif child.tag.endswith('tbl'):  # Таблица (Table)
+                    table = Table(child, doc)
+                    for row in table.rows:
+                        # Объединяем ячейки строки через табуляцию, убираем лишние переводы строк внутри ячеек
+                        row_text = "\t".join(
+                            cell.text.replace("\r\n", " ").replace("\n", " ").strip() 
+                            for cell in row.cells
+                        )
+                        if row_text.strip():
+                            lines.append(row_text)
+
+            return '\n'.join(lines)
         except Exception:
             raise ValueError(
                 f"Не удалось прочитать документ '{file.filename}'. Возможно, файл поврежден или зашифрован."
             )
-
     # Чтение обычных текстовых файлов
     encodings = ['utf-8-sig', 'utf-8', 'cp1251', 'latin-1']
     for enc in encodings:
@@ -64,7 +84,7 @@ def read_file_content(file: UploadFile) -> str:
             return content_bytes.decode(enc)
         except UnicodeDecodeError:
             continue
-
+        
     raise ValueError(f"Не удалось определить кодировку файла '{file.filename}'")
 
 @app.post("/api/compare")
