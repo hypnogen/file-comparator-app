@@ -57,33 +57,19 @@ The project was built as a full-stack application to demonstrate practical exper
 
 ### Main Interface
 
-<!-- Add screenshot here -->
-
 ![Main interface](screenshots/main.png)
 
 ### Comparison Results
 
-<!-- Add screenshot here -->
-
 ![Comparison results](screenshots/comparison.png)
-
-### Dark Mode
-
-<!-- Add screenshot here -->
-
-![Dark mode](screenshots/dark-mode.png)
-
-### Split View
-
-<!-- Add screenshot here -->
-
-![Split view](screenshots/split-view.png)
 
 ### Inline View
 
-<!-- Add screenshot here -->
-
 ![Inline view](screenshots/inline-view.png)
+
+### Dark Mode
+
+![Dark mode](screenshots/dark-mode.png)
 
 ---
 
@@ -227,7 +213,8 @@ file-comparator-app/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Controls.tsx
+│   │   │   ├── CompareForm.tsx
+│   │   │   ├── ComparisonResults.tsx
 │   │   │   ├── DiffViewer.tsx
 │   │   │   ├── DropZone.tsx
 │   │   │   ├── Header.tsx
@@ -254,7 +241,6 @@ file-comparator-app/
 │   ├── main.png
 │   ├── comparison.png
 │   ├── dark-mode.png
-│   ├── split-view.png
 │   └── inline-view.png
 │
 ├── .gitignore
@@ -276,7 +262,8 @@ Contains reusable UI components.
 * `ThemeToggle.tsx` — switches between light and dark themes
 * `ViewModeToggle.tsx` — switches between Split and Inline views
 * `Header.tsx` — application header
-* `Controls.tsx` — comparison controls
+* `CompareForm.tsx` — file selection and comparison form
+* `ComparisonResults.tsx` — comparison results section
 
 ### `hooks/`
 
@@ -304,6 +291,14 @@ Contains shared TypeScript interfaces.
 ## Backend Structure
 
 The backend is implemented as a FastAPI application.
+
+Dependencies are listed in `backend/requirements.txt`:
+
+- **FastAPI** — REST API
+- **Uvicorn** — ASGI server
+- **python-multipart** — multipart file uploads
+- **python-docx** — `.docx` parsing
+- **difflib** — built-in Python library used for comparison
 
 The main API endpoint is:
 
@@ -356,7 +351,7 @@ Example response structure:
 
 Make sure you have installed:
 
-* Node.js
+* Node.js 20.19+
 * npm
 * Python 3.10+
 * Git
